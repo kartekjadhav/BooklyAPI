@@ -18,9 +18,11 @@ access_token_bearer = AccessTokenBearer()
 @book_router.get("/", response_model=List[BookSchema], status_code=status.HTTP_200_OK)
 async def get_all_books(
     session: AsyncSession = Depends(get_session), 
-    user_data: TokenPayLoad = Depends(access_token_bearer)
+    tokenData: TokenPayLoad = Depends(access_token_bearer)
 ):
     books = await book_service.get_all_books(session=session)
+    print("="*10)
+    print(tokenData)
     return books
 
 # Get a specific book
@@ -28,7 +30,7 @@ async def get_all_books(
 async def get_books(
     book_uid, 
     session: AsyncSession = Depends(get_session),
-    user_data: TokenPayLoad = Depends(access_token_bearer)
+    tokenData: TokenPayLoad = Depends(access_token_bearer)
 ):
     book = await book_service.get_book(book_uid=book_uid, session=session)
     if book is not None:
@@ -41,7 +43,7 @@ async def get_books(
 async def create_book(
     book_data:BookCreateSchema, 
     session: AsyncSession = Depends(get_session),
-    user_data: TokenPayLoad = Depends(access_token_bearer)
+    tokenData: TokenPayLoad = Depends(access_token_bearer)
 ):
     new_book = await book_service.create_book(book_data=book_data, session=session)
     if new_book is not None:
@@ -55,7 +57,7 @@ async def update_book(
     book_uid:str, 
     book_update_data:BookUpdateSchema, 
     session: AsyncSession = Depends(get_session),
-    user_data: TokenPayLoad = Depends(access_token_bearer)
+    tokenData: TokenPayLoad = Depends(access_token_bearer)
 ):
     updated_book = await book_service.update_book(book_uid=book_uid, book_update_data=book_update_data, session=session)
     if update_book is not None:
@@ -68,7 +70,7 @@ async def update_book(
 async def delete_book(
     book_uid: str, 
     session: AsyncSession = Depends(get_session),
-    user_data: TokenPayLoad = Depends(access_token_bearer)
+    tokenData: TokenPayLoad = Depends(access_token_bearer)
 ):
     result = await book_service.delete_book(book_uid=book_uid, session=session)
     if result is None:

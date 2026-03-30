@@ -1,17 +1,16 @@
 from fastapi import Request, HTTPException, status
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi.security import HTTPBearer
 from src.utils.jwtUtil import verify_access_token
-from typing import List
 from src.schemas.token import TokenPayLoad
 
-class AccessTokenBearer(HTTPBearer):
-    def __init__(self, auto_error = True) -> TokenPayLoad:
+class TokenBearer(HTTPBearer):
+    def __init__(self, auto_error = True) -> None:
         super().__init__(auto_error=auto_error)
 
-    async def __call__(self, request: Request):
+    async def __call__(self, request: Request) -> TokenPayLoad:
         creds =  await super().__call__(request)
 
-        is_token_valid, user_data = self.token_valid(token=creds.credentials)
+        is_token_valid, tokenData = self.token_valid(token=creds.credentials)
 
         if not is_token_valid:
             raise HTTPException(
@@ -19,14 +18,29 @@ class AccessTokenBearer(HTTPBearer):
                 detail="Invalid Access Token"
             )
         
-        if user_data and user_data['refresh']:
+        self.verify_token_data(is_token_valid, tokenData)
+        
+        return tokenData
+    
+    def token_valid(self, token: str) -> tuple[bool, dict | None]:
+        token_data = verify_access_token(access_token=token)
+        return (True, token_data) if token_data is not None else (False, None)
+    
+    def verify_token_data(self, is_token_valid: bool, tokenData: TokenPayLoad):
+        raise NotImplementedError("Subclass must implement this method")
+
+class AccessTokenBearer(TokenBearer):
+    def verify_token_data(self, is_token_valid: bool, tokenData: TokenPayLoad):        
+        if tokenData and tokenData['refresh']:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Please provide Access Token"
             )
-        
-        return user_data
-    
-    def token_valid(self, token: str) -> tuple[bool, dict | None]:
-        user_data = verify_access_token(access_token=token)
-        return (True, user_data) if user_data is not None else (False, None)
+
+class RefreshTokenBearer(TokenBearer):
+    def verify_token_data(self, is_token_valid: bool, tokenData: TokenPayLoad):        
+        if tokenData and 'refresh' not in tokenData:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Please provide Refresh Token"
+            )
