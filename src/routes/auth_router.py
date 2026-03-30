@@ -3,18 +3,21 @@ from fastapi.responses import JSONResponse
 from sqlmodel.ext.asyncio.session import AsyncSession
 from src.services.UserService import UserService
 from src.schemas.UserSchemas import  UserCreateSchema, UsersSchema, UserLoginSchema
+from src.schemas.token import TokenPayLoad
 from src.db.db import get_session
 from src.utils.passwdUtil import verify_password
 from src.utils.jwtUtil import generate_access_token
-from datetime import timedelta  
+from datetime import timedelta, datetime
+from src.dependencies.bearer import RefreshTokenBearer
 
-user_router = APIRouter()
+auth_router = APIRouter()
 user_service = UserService()
+refresh_token_bearer = RefreshTokenBearer()
 
 REFRESH_TOKEN_EXPIRY = 2 # In days
 
 
-@user_router.post("/signup", response_model=UsersSchema, status_code=status.HTTP_201_CREATED)
+@auth_router.post("/signup", response_model=UsersSchema, status_code=status.HTTP_201_CREATED)
 async def create_user(user_data: UserCreateSchema, session: AsyncSession = Depends(get_session)):
     user_email = user_data.email
     user_exists = await user_service.user_exits(email=user_email, session=session)
@@ -26,7 +29,7 @@ async def create_user(user_data: UserCreateSchema, session: AsyncSession = Depen
 
     return new_user
 
-@user_router.post("/login", status_code=status.HTTP_200_OK)
+@auth_router.post("/login", status_code=status.HTTP_200_OK)
 async def login_user(user_login_data: UserLoginSchema, session: AsyncSession = Depends(get_session)):
     user_email = user_login_data.email
     user = await user_service.get_user_by_email(email=user_email, session=session)
@@ -62,3 +65,16 @@ async def login_user(user_login_data: UserLoginSchema, session: AsyncSession = D
             )
 
     raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid email or password")
+
+@auth_router.get("/refresh_token")
+async def get_access_token(tokenData: TokenPayLoad = Depends(refresh_token_bearer)):
+    expiry_timestamp = tokenData["exp"]
+    if datetime.fromtimestamp(expiry_timestamp) > datetime.now():
+        new_access_token = generate_access_token(user_data=tokenData["user"])
+        return JSONResponse(
+            content={
+                "access_token": new_access_token
+            }
+        )
+    
+    raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Invalid or expired token")

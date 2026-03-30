@@ -21,8 +21,6 @@ async def get_all_books(
     tokenData: TokenPayLoad = Depends(access_token_bearer)
 ):
     books = await book_service.get_all_books(session=session)
-    print("="*10)
-    print(tokenData)
     return books
 
 # Get a specific book

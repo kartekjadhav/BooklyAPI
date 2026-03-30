@@ -18,7 +18,7 @@ class TokenBearer(HTTPBearer):
                 detail="Invalid Access Token"
             )
         
-        self.verify_token_data(is_token_valid, tokenData)
+        self.verify_token_data(tokenData)
         
         return tokenData
     
@@ -26,20 +26,20 @@ class TokenBearer(HTTPBearer):
         token_data = verify_access_token(access_token=token)
         return (True, token_data) if token_data is not None else (False, None)
     
-    def verify_token_data(self, is_token_valid: bool, tokenData: TokenPayLoad):
+    def verify_token_data(self, tokenData: TokenPayLoad):
         raise NotImplementedError("Subclass must implement this method")
 
 class AccessTokenBearer(TokenBearer):
-    def verify_token_data(self, is_token_valid: bool, tokenData: TokenPayLoad):        
-        if tokenData and tokenData['refresh']:
+    def verify_token_data(self, tokenData: TokenPayLoad):        
+        if not tokenData or tokenData['refresh']:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Please provide Access Token"
             )
 
 class RefreshTokenBearer(TokenBearer):
-    def verify_token_data(self, is_token_valid: bool, tokenData: TokenPayLoad):        
-        if tokenData and 'refresh' not in tokenData:
+    def verify_token_data(self, tokenData: TokenPayLoad):        
+        if not tokenData or 'refresh' not in tokenData or not tokenData['refresh']:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Please provide Refresh Token"
