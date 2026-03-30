@@ -8,11 +8,13 @@ from src.db.db import get_session
 from src.utils.passwdUtil import verify_password
 from src.utils.jwtUtil import generate_access_token
 from datetime import timedelta, datetime
-from src.dependencies.bearer import RefreshTokenBearer
+from src.dependencies.bearer import RefreshTokenBearer, AccessTokenBearer
+from src.redis.redis import add_jti_to_blocklist
 
 auth_router = APIRouter()
 user_service = UserService()
 refresh_token_bearer = RefreshTokenBearer()
+access_token_bearer = AccessTokenBearer()
 
 REFRESH_TOKEN_EXPIRY = 2 # In days
 
@@ -78,3 +80,17 @@ async def get_access_token(tokenData: TokenPayLoad = Depends(refresh_token_beare
         )
     
     raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Invalid or expired token")
+
+
+@auth_router.get("/logout")
+async def logout(tokenData: TokenPayLoad = Depends(access_token_bearer)):
+    jti = tokenData["jti"]
+    await add_jti_to_blocklist(
+        jti=jti
+    )
+    return JSONResponse(
+        content={
+            "message": "Logged out successfully"
+        },
+        status_code=status.HTTP_200_OK
+    )
