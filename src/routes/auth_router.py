@@ -10,6 +10,7 @@ from src.utils.jwtUtil import generate_access_token
 from datetime import timedelta, datetime
 from src.dependencies.bearer import RefreshTokenBearer, AccessTokenBearer
 from src.redis.redis import add_jti_to_blocklist
+from src.dependencies.get_current_user import get_current_user
 
 auth_router = APIRouter()
 user_service = UserService()
@@ -68,7 +69,11 @@ async def login_user(user_login_data: UserLoginSchema, session: AsyncSession = D
 
     raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid email or password")
 
-@auth_router.get("/refresh_token")
+@auth_router.get("/me")
+async def get_current_user_details(user = Depends(get_current_user)):
+    return user
+
+@auth_router.get("/refresh")
 async def get_access_token(tokenData: TokenPayLoad = Depends(refresh_token_bearer)):
     expiry_timestamp = tokenData["exp"]
     if datetime.fromtimestamp(expiry_timestamp) > datetime.now():
