@@ -11,11 +11,13 @@ from datetime import timedelta, datetime
 from src.dependencies.bearer import RefreshTokenBearer, AccessTokenBearer
 from src.redis.redis import add_jti_to_blocklist
 from src.dependencies.get_current_user import get_current_user
+from src.dependencies.role_checker import RoleChecker
 
 auth_router = APIRouter()
 user_service = UserService()
 refresh_token_bearer = RefreshTokenBearer()
 access_token_bearer = AccessTokenBearer()
+role_checker = RoleChecker(allowed_roles=["user"])
 
 REFRESH_TOKEN_EXPIRY = 2 # In days
 
@@ -70,7 +72,10 @@ async def login_user(user_login_data: UserLoginSchema, session: AsyncSession = D
     raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid email or password")
 
 @auth_router.get("/me")
-async def get_current_user_details(user = Depends(get_current_user)):
+async def get_current_user_details(
+    user = Depends(get_current_user),
+    _: bool = Depends(role_checker)
+):
     return user
 
 @auth_router.get("/refresh")

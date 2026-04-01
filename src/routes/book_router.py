@@ -7,15 +7,16 @@ from src.schemas.token import TokenPayLoad
 from src.services.BookService import BookService
 from src.db.db import get_session
 from src.dependencies.bearer import AccessTokenBearer
+from src.dependencies.role_checker import RoleChecker
 
 
 book_router = APIRouter()
 book_service = BookService()
 access_token_bearer = AccessTokenBearer()
-
+role_checker = Depends(RoleChecker(allowed_roles=["user", "admin"]))
 
 # Get all books
-@book_router.get("/", response_model=List[BookSchema], status_code=status.HTTP_200_OK)
+@book_router.get("/", response_model=List[BookSchema], status_code=status.HTTP_200_OK, dependencies=[role_checker])
 async def get_all_books(
     session: AsyncSession = Depends(get_session), 
     tokenData: TokenPayLoad = Depends(access_token_bearer)
@@ -24,7 +25,7 @@ async def get_all_books(
     return books
 
 # Get a specific book
-@book_router.get("/{book_uid}", response_model=BookSchema, status_code=status.HTTP_200_OK)
+@book_router.get("/{book_uid}", response_model=BookSchema, status_code=status.HTTP_200_OK, dependencies=[role_checker])
 async def get_books(
     book_uid, 
     session: AsyncSession = Depends(get_session),
@@ -37,7 +38,7 @@ async def get_books(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Book not found")
 
 # Create a book
-@book_router.post("/", response_model=BookSchema, status_code=status.HTTP_201_CREATED)
+@book_router.post("/", response_model=BookSchema, status_code=status.HTTP_201_CREATED, dependencies=[role_checker])
 async def create_book(
     book_data:BookCreateSchema, 
     session: AsyncSession = Depends(get_session),
@@ -50,7 +51,7 @@ async def create_book(
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Server side error")
 
 # Update a book
-@book_router.patch("/{book_uid}", response_model=BookSchema, status_code=status.HTTP_200_OK)
+@book_router.patch("/{book_uid}", response_model=BookSchema, status_code=status.HTTP_200_OK, dependencies=[role_checker])
 async def update_book(
     book_uid:str, 
     book_update_data:BookUpdateSchema, 
@@ -64,7 +65,7 @@ async def update_book(
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Server side error")
 
 # Delete a book
-@book_router.delete("/{book_uid}", status_code=status.HTTP_204_NO_CONTENT)
+@book_router.delete("/{book_uid}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[role_checker])
 async def delete_book(
     book_uid: str, 
     session: AsyncSession = Depends(get_session),
