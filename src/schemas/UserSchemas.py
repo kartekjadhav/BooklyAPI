@@ -1,6 +1,8 @@
 from pydantic import BaseModel, Field, EmailStr
 import uuid
 from datetime import datetime
+from typing import List, Optional
+from src.models import Books
 
 class UserCreateSchema(BaseModel):
     username: str = Field(min_length=3, max_length=30)
@@ -20,6 +22,7 @@ class UsersSchema(BaseModel):
     verified: bool
     created_at: datetime
     updated_at: datetime
+    books: Optional[List[Books]]
 
 class UserLoginSchema(BaseModel):
     email: EmailStr = Field(max_length=100)

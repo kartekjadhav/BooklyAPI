@@ -1,5 +1,6 @@
 from datetime import datetime, timezone
 from typing import List
+import uuid
 from sqlmodel import select, desc
 from sqlmodel.ext.asyncio.session import AsyncSession
 from src.schemas.BookSchemas import BookSchema, BookCreateSchema, BookUpdateSchema
@@ -21,9 +22,10 @@ class BookService:
         return book if book is not None else None
 
     # Create book
-    async def create_book(self, book_data: BookCreateSchema, session: AsyncSession) -> BookSchema:
+    async def create_book(self, user_uid: uuid.UUID, book_data: BookCreateSchema, session: AsyncSession) -> BookSchema:
         book_data_dict = book_data.model_dump()
         new_book = Books(**book_data_dict)
+        new_book.user_uid = user_uid
         session.add(new_book)
         await session.commit()
         return new_book

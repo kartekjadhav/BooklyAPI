@@ -5,6 +5,7 @@ from datetime import datetime, date
 
 class BookSchema(BaseModel):
     uid: uuid.UUID
+    user_uid: uuid.UUID
     title: str
     author: str
     publisher: str

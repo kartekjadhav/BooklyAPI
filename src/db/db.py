@@ -6,8 +6,7 @@ from sqlmodel import SQLModel, text
 from src.models import Books, Users
 
 engine = create_async_engine(
-    url=setting.DATABASE_URL,
-    echo=True
+    url=setting.DATABASE_URL
 )
 
 asyncSessionmaker = async_sessionmaker(

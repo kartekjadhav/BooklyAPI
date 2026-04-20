@@ -22,4 +22,5 @@ class UserService:
         new_user.role = "user"
         session.add(new_user)
         await session.commit()
+        await session.refresh(new_user)
         return new_user

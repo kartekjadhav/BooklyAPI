@@ -71,7 +71,7 @@ async def login_user(user_login_data: UserLoginSchema, session: AsyncSession = D
 
     raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid email or password")
 
-@auth_router.get("/me")
+@auth_router.get("/me", response_model=UsersSchema, status_code=status.HTTP_200_OK)
 async def get_current_user_details(
     user = Depends(get_current_user),
     _: bool = Depends(role_checker)

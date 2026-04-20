@@ -44,7 +44,7 @@ async def create_book(
     session: AsyncSession = Depends(get_session),
     tokenData: TokenPayLoad = Depends(access_token_bearer)
 ):
-    new_book = await book_service.create_book(book_data=book_data, session=session)
+    new_book = await book_service.create_book(user_uid=tokenData["user"]["uid"], book_data=book_data, session=session)
     if new_book is not None:
         return new_book
     else:
