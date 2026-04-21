@@ -4,7 +4,7 @@ from .bearer import AccessTokenBearer
 from src.schemas.token import TokenPayLoad
 from src.db.db import get_session
 from src.services.UserService import UserService
-from src.models.UserModel import Users
+from src.models import Users
 
 async def get_current_user(
     tokenData: TokenPayLoad = Depends(AccessTokenBearer()),

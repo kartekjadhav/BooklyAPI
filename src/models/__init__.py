@@ -1,2 +1,1 @@
-from .BooksModel import Books
-from .UserModel import Users
+from .all_models import Books, Users, Reviews

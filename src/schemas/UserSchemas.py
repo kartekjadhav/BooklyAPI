@@ -22,7 +22,10 @@ class UsersSchema(BaseModel):
     verified: bool
     created_at: datetime
     updated_at: datetime
+
+class UsersSchemaWithBooks(UsersSchema):
     books: Optional[List[Books]]
+
 
 class UserLoginSchema(BaseModel):
     email: EmailStr = Field(max_length=100)

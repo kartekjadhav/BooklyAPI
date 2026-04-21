@@ -1,7 +1,7 @@
 from fastapi import Depends, HTTPException, status
 from typing import List
 from .get_current_user import get_current_user
-from src.models.UserModel import Users
+from src.models import Users
 
 class RoleChecker:
     def __init__(self, allowed_roles: List[str]):

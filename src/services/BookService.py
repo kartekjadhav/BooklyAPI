@@ -4,7 +4,7 @@ import uuid
 from sqlmodel import select, desc
 from sqlmodel.ext.asyncio.session import AsyncSession
 from src.schemas.BookSchemas import BookSchema, BookCreateSchema, BookUpdateSchema
-from src.models.BooksModel import Books
+from src.models import Books
 
 
 class BookService:

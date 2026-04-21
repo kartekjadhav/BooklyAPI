@@ -9,7 +9,7 @@ from alembic import context
 
 from sqlmodel import SQLModel
 from src.schemas.setting import setting
-from src.models import Books, Users
+from src.models import *
 
 
 DATABASE_URL = setting.DATABASE_URL

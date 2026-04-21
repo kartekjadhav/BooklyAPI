@@ -1,6 +1,6 @@
 from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlmodel import select
-from src.models.UserModel import Users
+from src.models import Users
 from src.schemas.UserSchemas import UserCreateSchema, UsersSchema
 from src.utils.passwdUtil import generate_password_hash, verify_password
 
@@ -22,5 +22,4 @@ class UserService:
         new_user.role = "user"
         session.add(new_user)
         await session.commit()
-        await session.refresh(new_user)
         return new_user

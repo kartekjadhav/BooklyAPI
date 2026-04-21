@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import JSONResponse
 from sqlmodel.ext.asyncio.session import AsyncSession
 from src.services.UserService import UserService
-from src.schemas.UserSchemas import  UserCreateSchema, UsersSchema, UserLoginSchema
+from src.schemas.UserSchemas import  UserCreateSchema, UsersSchema, UserLoginSchema, UsersSchemaWithBooks
 from src.schemas.token import TokenPayLoad
 from src.db.db import get_session
 from src.utils.passwdUtil import verify_password
@@ -71,7 +71,7 @@ async def login_user(user_login_data: UserLoginSchema, session: AsyncSession = D
 
     raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid email or password")
 
-@auth_router.get("/me", response_model=UsersSchema, status_code=status.HTTP_200_OK)
+@auth_router.get("/me", response_model=UsersSchemaWithBooks, status_code=status.HTTP_200_OK)
 async def get_current_user_details(
     user = Depends(get_current_user),
     _: bool = Depends(role_checker)
