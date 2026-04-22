@@ -3,7 +3,7 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 from .bearer import AccessTokenBearer
 from src.schemas.token import TokenPayLoad
 from src.db.db import get_session
-from src.services.UserService import UserService
+from src.services.user_service import UserService
 from src.models import Users
 
 async def get_current_user(

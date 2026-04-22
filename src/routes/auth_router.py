@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import JSONResponse
 from sqlmodel.ext.asyncio.session import AsyncSession
-from src.services.UserService import UserService
+from src.services.user_service import UserService
 from src.schemas.UserSchemas import  UserCreateSchema, UsersSchema, UserLoginSchema, UsersSchemaWithBooks
 from src.schemas.token import TokenPayLoad
 from src.db.db import get_session
@@ -36,40 +36,45 @@ async def create_user(user_data: UserCreateSchema, session: AsyncSession = Depen
 
 @auth_router.post("/login", status_code=status.HTTP_200_OK)
 async def login_user(user_login_data: UserLoginSchema, session: AsyncSession = Depends(get_session)):
-    user_email = user_login_data.email
-    user = await user_service.get_user_by_email(email=user_email, session=session)
-    if user is not None:
-        is_password_valid = verify_password(original_password=user_login_data.password, hashed_password=user.password_hash)
-        if is_password_valid:
-            access_token = generate_access_token(
-                user_data={
-                    "uid": str(user.uid),
-                    "email": user.email
-                }
-            )
-
-            refresh_token = generate_access_token(
-                user_data={
-                    "uid": str(user.uid),
-                    "email": user.email
-                },
-                refresh = True,
-                expiry = timedelta(days=REFRESH_TOKEN_EXPIRY)
-            )
-
-            return JSONResponse(
-                content={
-                    "message": "Login Successfull",
-                    "access_token": access_token,
-                    "refresh_token": refresh_token,
-                    "user": {
+    try:
+        user_email = user_login_data.email
+        user = await user_service.get_user_by_email(email=user_email, session=session)
+        if user is not None:
+            is_password_valid = verify_password(original_password=user_login_data.password, hashed_password=user.password_hash)
+            if is_password_valid:
+                access_token = generate_access_token(
+                    user_data={
                         "uid": str(user.uid),
                         "email": user.email
                     }
-                }
-            )
+                )
 
-    raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid email or password")
+                refresh_token = generate_access_token(
+                    user_data={
+                        "uid": str(user.uid),
+                        "email": user.email
+                    },
+                    refresh = True,
+                    expiry = timedelta(days=REFRESH_TOKEN_EXPIRY)
+                )
+
+                return JSONResponse(
+                    content={
+                        "message": "Login Successfull",
+                        "access_token": access_token,
+                        "refresh_token": refresh_token,
+                        "user": {
+                            "uid": str(user.uid),
+                            "email": user.email
+                        }
+                    }
+                )
+
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid email or password")
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal Server Error")
 
 @auth_router.get("/me", response_model=UsersSchemaWithBooks, status_code=status.HTTP_200_OK)
 async def get_current_user_details(

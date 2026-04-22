@@ -42,7 +42,7 @@ class Books(SQLModel, table=True):
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column(pg.TIMESTAMP(timezone=True), nullable=False))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), sa_column=Column(pg.TIMESTAMP(timezone=True), nullable=False))
     user: Optional["Users"] = Relationship(back_populates="books")
-    reviews = Optional["Reviews"] = Relationship(back_populates="book", sa_relationship_kwargs={'lazy': 'selectin'})
+    reviews: Optional[List["Reviews"]] = Relationship(back_populates="book", sa_relationship_kwargs={'lazy': 'selectin'})
 
     def __repr__(self):
         return f"<Book {self.title}>"
@@ -52,10 +52,10 @@ class Reviews(SQLModel, table=True):
     __tablename__ = "reviews"
 
     uid: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True, nullable=False)
-    user_id: uuid.UUID = Field(foreign_key="users.uid", index=True)
-    book_id: uuid.UUID = Field(foreign_key="books.uid", index=True)
+    user_uid: uuid.UUID = Field(foreign_key="users.uid", index=True)
+    book_uid: uuid.UUID = Field(foreign_key="books.uid", index=True)
     review_text: Optional[str] = Field(default=None, sa_column=Column(pg.VARCHAR(1500)))
-    rating: int = Field(default=0, le=0, ge=5)
+    rating: int = Field(default=0, le=5, ge=0)
     created_at: datetime = Field(default_factory=lambda: datetime.now(tz=timezone.utc), sa_column=Column(pg.TIMESTAMP(timezone=True), nullable=False))
     user: Optional["Users"] = Relationship(back_populates="reviews")
     book: Optional["Books"] = Relationship(back_populates="reviews")

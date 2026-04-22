@@ -29,6 +29,6 @@ def verify_access_token(access_token: str):
             algorithms=[setting.JWT_ALGORITHM]
         )
         return decode_data
-    except jwt.PyJWTError as e:
+    except Exception as e:
         logging.exception(e)
         return None
