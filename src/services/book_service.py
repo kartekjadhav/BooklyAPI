@@ -20,7 +20,9 @@ class BookService:
         statement = select(Books).where(Books.uid == book_uid)
         result = await session.exec(statement)
         book = result.first()
-        return book if book is not None else None
+        if book:
+            return book
+        raise BookNotFound()
 
     # Create book
     async def create_book(self, user_uid: uuid.UUID, book_data: BookCreateSchema, session: AsyncSession) -> BookSchema:

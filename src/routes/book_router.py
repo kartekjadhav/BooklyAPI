@@ -34,10 +34,7 @@ async def get_books(
     tokenData: TokenPayLoad = Depends(access_token_bearer)
 ):
     book = await book_service.get_book(book_uid=book_uid, session=session)
-    if book is not None:
-        return book
-    else:
-        raise BookNotFound()
+    return book
 
 # Create a book
 @book_router.post("/", response_model=BookSchema, status_code=status.HTTP_201_CREATED, dependencies=[role_checker])
