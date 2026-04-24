@@ -12,6 +12,7 @@ from src.dependencies.bearer import RefreshTokenBearer, AccessTokenBearer
 from src.redis.redis import add_jti_to_blocklist
 from src.dependencies.get_current_user import get_current_user
 from src.dependencies.role_checker import RoleChecker
+from src.errors.errors import UserAlreadyExists, InvalidCredentials, InvalidOrExpiredToken
 
 auth_router = APIRouter()
 user_service = UserService()
@@ -28,7 +29,7 @@ async def create_user(user_data: UserCreateSchema, session: AsyncSession = Depen
     user_exists = await user_service.user_exits(email=user_email, session=session)
 
     if user_exists:
-        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="User with given email already exists")
+        raise UserAlreadyExists()
     
     new_user = await user_service.create_user(user_data=user_data, session=session)
 
@@ -36,45 +37,40 @@ async def create_user(user_data: UserCreateSchema, session: AsyncSession = Depen
 
 @auth_router.post("/login", status_code=status.HTTP_200_OK)
 async def login_user(user_login_data: UserLoginSchema, session: AsyncSession = Depends(get_session)):
-    try:
-        user_email = user_login_data.email
-        user = await user_service.get_user_by_email(email=user_email, session=session)
-        if user is not None:
-            is_password_valid = verify_password(original_password=user_login_data.password, hashed_password=user.password_hash)
-            if is_password_valid:
-                access_token = generate_access_token(
-                    user_data={
+    user_email = user_login_data.email
+    user = await user_service.get_user_by_email(email=user_email, session=session)
+    if user is not None:
+        is_password_valid = verify_password(original_password=user_login_data.password, hashed_password=user.password_hash)
+        if is_password_valid:
+            access_token = generate_access_token(
+                user_data={
+                    "uid": str(user.uid),
+                    "email": user.email
+                }
+            )
+
+            refresh_token = generate_access_token(
+                user_data={
+                    "uid": str(user.uid),
+                    "email": user.email
+                },
+                refresh = True,
+                expiry = timedelta(days=REFRESH_TOKEN_EXPIRY)
+            )
+
+            return JSONResponse(
+                content={
+                    "message": "Login Successfull",
+                    "access_token": access_token,
+                    "refresh_token": refresh_token,
+                    "user": {
                         "uid": str(user.uid),
                         "email": user.email
                     }
-                )
+                }
+            )
 
-                refresh_token = generate_access_token(
-                    user_data={
-                        "uid": str(user.uid),
-                        "email": user.email
-                    },
-                    refresh = True,
-                    expiry = timedelta(days=REFRESH_TOKEN_EXPIRY)
-                )
-
-                return JSONResponse(
-                    content={
-                        "message": "Login Successfull",
-                        "access_token": access_token,
-                        "refresh_token": refresh_token,
-                        "user": {
-                            "uid": str(user.uid),
-                            "email": user.email
-                        }
-                    }
-                )
-
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid email or password")
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Internal Server Error")
+    raise InvalidCredentials()
 
 @auth_router.get("/me", response_model=UsersSchemaWithBooks, status_code=status.HTTP_200_OK)
 async def get_current_user_details(
@@ -94,7 +90,7 @@ async def get_access_token(tokenData: TokenPayLoad = Depends(refresh_token_beare
             }
         )
     
-    raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Invalid or expired token")
+    raise InvalidOrExpiredToken()
 
 
 @auth_router.get("/logout")

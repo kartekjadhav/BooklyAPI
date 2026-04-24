@@ -1,4 +1,5 @@
 from fastapi import APIRouter, HTTPException, status, Depends
+from fastapi.responses import Response
 from typing import List, Annotated
 from sqlmodel.ext.asyncio.session import AsyncSession
 from src.book_data import books
@@ -8,6 +9,7 @@ from src.services.book_service import BookService
 from src.db.db import get_session
 from src.dependencies.bearer import AccessTokenBearer
 from src.dependencies.role_checker import RoleChecker
+
 
 
 book_router = APIRouter()
@@ -35,7 +37,7 @@ async def get_books(
     if book is not None:
         return book
     else:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Book not found")
+        raise BookNotFound()
 
 # Create a book
 @book_router.post("/", response_model=BookSchema, status_code=status.HTTP_201_CREATED, dependencies=[role_checker])
@@ -48,7 +50,7 @@ async def create_book(
     if new_book is not None:
         return new_book
     else:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Server side error")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 # Update a book
 @book_router.patch("/{book_uid}", response_model=BookSchema, status_code=status.HTTP_200_OK, dependencies=[role_checker])
@@ -62,7 +64,7 @@ async def update_book(
     if update_book is not None:
         return updated_book
     else:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Server side error")
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 # Delete a book
 @book_router.delete("/{book_uid}", status_code=status.HTTP_204_NO_CONTENT, dependencies=[role_checker])
@@ -71,8 +73,5 @@ async def delete_book(
     session: AsyncSession = Depends(get_session),
     tokenData: TokenPayLoad = Depends(access_token_bearer)
 ):
-    result = await book_service.delete_book(book_uid=book_uid, session=session)
-    if result is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Book not found")
-    else:
-        return {}
+    await book_service.delete_book(book_uid=book_uid, session=session)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)

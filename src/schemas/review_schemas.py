@@ -10,7 +10,13 @@ class ReviewSchema(BaseModel):
     review_text: Optional[str]
     rating: int
     created_at: datetime
+    updated_at: datetime
 
 class ReviewCreateSchema(BaseModel):
+    rating: int = Field(ge=0, le=5)
+    review_text: str = Field(max_length=1500)
+
+
+class ReviewUpdateSchema(BaseModel):
     rating: int = Field(ge=0, le=5)
     review_text: str = Field(max_length=1500)

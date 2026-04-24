@@ -3,6 +3,7 @@ from fastapi.security import HTTPBearer
 from src.utils.jwtUtil import verify_access_token
 from src.schemas.token import TokenPayLoad
 from src.redis.redis import token_in_blocklist
+from src.errors.errors import InvalidOrExpiredToken, InvalidOrRevokedToken
 
 class TokenBearer(HTTPBearer):
     def __init__(self, auto_error = True) -> None:
@@ -14,19 +15,10 @@ class TokenBearer(HTTPBearer):
         is_token_valid, tokenData = self.token_valid(token=creds.credentials)
 
         if not is_token_valid:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Invalid or Expired Access Token"
-            )
+            raise InvalidOrExpiredToken()
         
         if not tokenData['jti'] or await token_in_blocklist(tokenData['jti']):
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail={
-                    "error": "Invalid or Revoked Access Token",
-                    "message": "Please request new token"
-                }
-            )
+            raise InvalidOrRevokedToken()
         
         self.verify_token_data(tokenData)
         
@@ -42,15 +34,9 @@ class TokenBearer(HTTPBearer):
 class AccessTokenBearer(TokenBearer):
     def verify_token_data(self, tokenData: TokenPayLoad):        
         if not tokenData or tokenData['refresh']:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Please provide Access Token"
-            )
+            raise InvalidOrRevokedToken()
 
 class RefreshTokenBearer(TokenBearer):
     def verify_token_data(self, tokenData: TokenPayLoad):        
         if not tokenData or 'refresh' not in tokenData or not tokenData['refresh']:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Please provide Refresh Token"
-            )
+            raise InvalidOrRevokedToken()

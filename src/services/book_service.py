@@ -5,6 +5,7 @@ from sqlmodel import select, desc
 from sqlmodel.ext.asyncio.session import AsyncSession
 from src.schemas.BookSchemas import BookSchema, BookCreateSchema, BookUpdateSchema
 from src.models import Books
+from src.errors.errors import BookNotFound
 
 
 class BookService:
@@ -51,6 +52,6 @@ class BookService:
         if book_to_delete is not None:
             await session.delete(book_to_delete)
             await session.commit()
-            return {}
+            return
         else:
-            return None
+            return BookNotFound()

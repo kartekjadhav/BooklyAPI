@@ -57,6 +57,7 @@ class Reviews(SQLModel, table=True):
     review_text: Optional[str] = Field(default=None, sa_column=Column(pg.VARCHAR(1500)))
     rating: int = Field(default=0, le=5, ge=0)
     created_at: datetime = Field(default_factory=lambda: datetime.now(tz=timezone.utc), sa_column=Column(pg.TIMESTAMP(timezone=True), nullable=False))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(tz=timezone.utc), sa_column=Column(pg.TIMESTAMP(timezone=True)))
     user: Optional["Users"] = Relationship(back_populates="reviews")
     book: Optional["Books"] = Relationship(back_populates="reviews")
 
