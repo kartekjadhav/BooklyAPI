@@ -1,0 +1,7 @@
+<!-- test.html - Open this file directly in browser (file:///) -->
+<script>
+fetch('http://127.0.0.1:8000/api/v1/books')
+  .then(r => r.json())
+  .then(console.log)
+  .catch(console.error);  // ❌ CORS error here!
+</script>

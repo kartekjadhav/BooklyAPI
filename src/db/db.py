@@ -4,6 +4,9 @@ from typing import AsyncGenerator
 from src.schemas.setting import setting
 from sqlmodel import SQLModel, text
 from src.models import Books, Users
+from rich.console import Console
+
+console = Console()
 
 engine = create_async_engine(
     url=setting.DATABASE_URL
@@ -20,8 +23,8 @@ async def init_db():
     try:
         async with engine.begin() as conn:
             await conn.execute(text("SELECT 1"))
-
-        print("✅ Postgres connection working fine")
+        
+        console.print("[green]✅ Postgres connection working fine[/green]")
     except Exception as e:
         print("❌ Postgres connection failed:", e)
         raise e  # crash app
