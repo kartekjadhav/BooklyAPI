@@ -61,7 +61,7 @@ def get_email_verification_template(username:str, verification_link:str):
                     </p>
 
                     <p style="margin:0 0 36px;font-size:15px;color:#7c6fa0;line-height:1.8;">
-                        This link will expire in <strong style="color:#6347ff;">1 hour.</strong>
+                        This link will expire in <strong style="color:#6347ff;">3 hour.</strong>
                         If you didn't create an account, you can safely ignore this email.
                     </p>
 
