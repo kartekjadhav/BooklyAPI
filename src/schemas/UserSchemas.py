@@ -23,6 +23,12 @@ class UsersSchema(BaseModel):
     created_at: datetime
     updated_at: datetime
 
+
+class NewUsersCreatedSchema(BaseModel):
+    message: str
+    user: UsersSchema
+
+
 class UsersSchemaWithBooks(UsersSchema):
     books: Optional[List[Books]]
 
