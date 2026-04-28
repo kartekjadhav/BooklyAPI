@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import JSONResponse
 from sqlmodel.ext.asyncio.session import AsyncSession
 from src.services.user_service import UserService
-from src.schemas.UserSchemas import  UserCreateSchema, UsersSchema, UserLoginSchema, UsersSchemaWithBooks, NewUsersCreatedSchema
+from src.schemas.UserSchemas import  UserCreateSchema, UserLoginSchema, UsersSchemaWithBooks, NewUsersCreatedSchema, PasswordResetConfirmSchema, PasswordResetRequestSchema
 from src.schemas.token import TokenPayLoad
 from src.db.db import get_session
 from src.utils.passwdUtil import verify_password
@@ -15,9 +15,11 @@ from src.dependencies.role_checker import RoleChecker
 from src.errors.errors import UserAlreadyExists, InvalidCredentials, InvalidOrExpiredToken, UserNotFound
 from src.mail import create_message, EmailAddressesSchema, fastmail
 from src.email_templates.test_template import generate_template
-from src.email_templates.email_verification_template import get_email_verification_template
-from src.utils.token_util import generate_email_verification_token, verify_email_verification_token
+from src.email_templates import generate_email_verification_template, generate_reset_password_template
+from src.utils.token_util import generate_serializer_token, verify_serializer_token, email_verify_serializer, password_reset_serializer
 from src.schemas.setting import setting
+from src.utils.passwdUtil import generate_password_hash
+
 
 auth_router = APIRouter()
 user_service = UserService()
@@ -40,14 +42,14 @@ async def create_user(user_data: UserCreateSchema, session: AsyncSession = Depen
 
     if new_user:
 
-        email_verification_token = generate_email_verification_token(data={'email': user_email})
+        email_verification_token = generate_serializer_token(data={'email': user_email}, serializer=email_verify_serializer)
 
         link = f"http://{setting.DOMAIN}/api/v1/auth/verify_email/{email_verification_token}"
 
         msg = create_message(
             recipients=[user_email],
             subject="Verify your Email!",
-            body=get_email_verification_template(username=f"{new_user.first_name} {new_user.last_name}", verification_link=link)
+            body=generate_email_verification_template(username=f"{new_user.first_name} {new_user.last_name}", verification_link=link)
         )
 
         await fastmail.send_message(
@@ -67,7 +69,7 @@ async def create_user(user_data: UserCreateSchema, session: AsyncSession = Depen
 
 @auth_router.get("/verify_email/{token}")
 async def verify_email_token(token:str, session:AsyncSession=Depends(get_session)):
-    token_data = verify_email_verification_token(token)
+    token_data = verify_serializer_token(token=token, serializer=email_verify_serializer)
     user_email = token_data.get('email')
     if user_email:
         user = await user_service.get_user_by_email(user_email, session)
@@ -175,5 +177,56 @@ async def send_email(recipients:EmailAddressesSchema, subject:str, body:str=None
 
     return JSONResponse(
         content="Email sent successfully",
+        status_code=status.HTTP_200_OK
+    )
+
+
+@auth_router.post("/reset_password")
+async def reset_password_initiate(user_data:PasswordResetRequestSchema, session:AsyncSession=Depends(get_session)):
+    user_email = user_data.email
+
+    email_verification_token = generate_serializer_token(data={'email': user_email}, serializer=password_reset_serializer)
+
+    link = f"http://{setting.DOMAIN}/api/v1/auth/reset_password_confirm/{email_verification_token}"
+
+    msg = create_message(
+        recipients=[user_email],
+        subject="Verify your Email!",
+        body=generate_reset_password_template(reset_link=link)
+    )
+
+    await fastmail.send_message(
+        message=msg
+    )
+
+    return JSONResponse(
+        content={
+            "message": "Please follow the instruction sent to your email",
+        },
+        status_code=status.HTTP_200_OK
+    )
+
+@auth_router.post("/reset_password_confirm/{token}")
+async def reset_password_initiate(token: str, reset_password_data: PasswordResetConfirmSchema, session:AsyncSession=Depends(get_session)):
+    if reset_password_data.new_password != reset_password_data.confirm_password:
+        return JSONResponse(
+            content={
+                "message": "New password and confirm password should be same"
+            },
+            status_code=status.HTTP_400_BAD_REQUEST
+        )
+    
+    token_data = verify_serializer_token(token=token, serializer=password_reset_serializer)
+    user_email = token_data.get('email')
+    user = await user_service.get_user_by_email(user_email, session)
+    if not user:
+        raise UserNotFound()
+    
+    new_password_hash = generate_password_hash(password=reset_password_data.new_password)
+    await user_service.update_user(user=user, user_data={'password_hash': new_password_hash}, session=session)
+    return JSONResponse(
+        content={
+            "message": "Password Resetted successfully!"
+        },
         status_code=status.HTTP_200_OK
     )

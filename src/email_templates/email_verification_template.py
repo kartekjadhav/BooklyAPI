@@ -1,4 +1,4 @@
-def get_email_verification_template(username:str, verification_link:str):
+def generate_email_verification_template(username:str, verification_link:str):
     return f"""
         <!DOCTYPE html>
         <html lang="en">

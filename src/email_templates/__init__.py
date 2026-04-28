@@ -1,0 +1,2 @@
+from .email_verification_template import generate_email_verification_template
+from .reset_password_template import generate_reset_password_template

@@ -7,6 +7,10 @@ class BooklyException(Exception):
     """Base exception clss for all the exceptions in Bookly application"""
     pass
 
+class AccountNotVerified(BooklyException):
+    """Account not verified exception"""
+    pass
+
 class UserAlreadyExists(BooklyException):
     """User already exists exception"""
     pass
@@ -53,6 +57,18 @@ def create_exception_handler(status_code: int, detail: Any) -> Callable[[Request
     return exception_handler
 
 def register_all_errors(app: FastAPI):
+    app.add_exception_handler(
+        AccountNotVerified,
+        create_exception_handler(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={
+                "message": "Your email has not been verified yet",
+                "error_code": "account_not_verified",
+                "resoultion": "Please verify your email to proceed"
+            }
+        )
+    )
+
     app.add_exception_handler(
     InvalidCredentials,
     create_exception_handler(

@@ -36,3 +36,11 @@ class UsersSchemaWithBooks(UsersSchema):
 class UserLoginSchema(BaseModel):
     email: EmailStr = Field(max_length=100)
     password: str = Field(min_length=6, max_length=30)
+
+
+class PasswordResetRequestSchema(BaseModel):
+    email: EmailStr = Field(max_length=100)
+
+class PasswordResetConfirmSchema(BaseModel):
+    new_password:str = Field(min_length=6, max_length=30)
+    confirm_password:str = Field(min_length=6, max_length=30)
