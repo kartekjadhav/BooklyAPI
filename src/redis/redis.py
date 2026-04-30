@@ -6,7 +6,7 @@ JTI_EXPIRY = 3600
 
 
 token_blocklist = redis.from_url(
-    url=f"{setting.REDIS_URL}:{setting.REDIS_PORT}",
+    url=f"{ setting.REDIS_URL}",
     decode_responses=True,
     db=0
 )

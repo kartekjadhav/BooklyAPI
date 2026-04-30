@@ -19,6 +19,7 @@ from src.email_templates import generate_email_verification_template, generate_r
 from src.utils.token_util import generate_serializer_token, verify_serializer_token, email_verify_serializer, password_reset_serializer
 from src.schemas.setting import setting
 from src.utils.passwdUtil import generate_password_hash
+from src.celery import send_email_task
 
 
 auth_router = APIRouter()
@@ -46,14 +47,10 @@ async def create_user(user_data: UserCreateSchema, session: AsyncSession = Depen
 
         link = f"http://{setting.DOMAIN}/api/v1/auth/verify_email/{email_verification_token}"
 
-        msg = create_message(
+        send_email_task.delay(
             recipients=[user_email],
             subject="Verify your Email!",
             body=generate_email_verification_template(username=f"{new_user.first_name} {new_user.last_name}", verification_link=link)
-        )
-
-        await fastmail.send_message(
-            message=msg
         )
 
         return JSONResponse(
@@ -165,14 +162,11 @@ async def logout(tokenData: TokenPayLoad = Depends(access_token_bearer)):
 @auth_router.post("/send_email")
 async def send_email(recipients:EmailAddressesSchema, subject:str, body:str=None):
     body = generate_template(username="Kartek", message="Hope you are doing well, this is a test email and dont reply.")
-    msg = create_message(
+
+    send_email_task.delay(
         recipients=recipients.model_dump().get('emails'),
         subject=subject,
         body=body
-    )
-
-    await fastmail.send_message(
-        message=msg
     )
 
     return JSONResponse(
@@ -189,14 +183,10 @@ async def reset_password_initiate(user_data:PasswordResetRequestSchema, session:
 
     link = f"http://{setting.DOMAIN}/api/v1/auth/reset_password_confirm/{email_verification_token}"
 
-    msg = create_message(
+    send_email_task(
         recipients=[user_email],
         subject="Verify your Email!",
         body=generate_reset_password_template(reset_link=link)
-    )
-
-    await fastmail.send_message(
-        message=msg
     )
 
     return JSONResponse(
@@ -218,15 +208,22 @@ async def reset_password_initiate(token: str, reset_password_data: PasswordReset
     
     token_data = verify_serializer_token(token=token, serializer=password_reset_serializer)
     user_email = token_data.get('email')
-    user = await user_service.get_user_by_email(user_email, session)
-    if not user:
-        raise UserNotFound()
-    
-    new_password_hash = generate_password_hash(password=reset_password_data.new_password)
-    await user_service.update_user(user=user, user_data={'password_hash': new_password_hash}, session=session)
+    if user_email:
+        user = await user_service.get_user_by_email(user_email, session)
+        if not user:
+            raise UserNotFound()
+        
+        new_password_hash = generate_password_hash(password=reset_password_data.new_password)
+        await user_service.update_user(user=user, user_data={'password_hash': new_password_hash}, session=session)
+        return JSONResponse(
+            content={
+                "message": "Password Resetted successfully!"
+            },
+            status_code=status.HTTP_200_OK
+        )
     return JSONResponse(
         content={
-            "message": "Password Resetted successfully!"
+            "message": "Error occured during verificationpassword reset"
         },
-        status_code=status.HTTP_200_OK
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR
     )
