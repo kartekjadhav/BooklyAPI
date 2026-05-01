@@ -20,8 +20,8 @@ role_checker = Depends(RoleChecker(allowed_roles=["user", "admin"]))
 # Get all books
 @book_router.get("/", response_model=List[BookSchema], status_code=status.HTTP_200_OK, dependencies=[role_checker])
 async def get_all_books(
-    session: AsyncSession = Depends(get_session), 
-    tokenData: TokenPayLoad = Depends(access_token_bearer)
+    tokenData: TokenPayLoad = Depends(access_token_bearer),
+    session: AsyncSession = Depends(get_session)
 ):
     books = await book_service.get_all_books(session=session)
     return books

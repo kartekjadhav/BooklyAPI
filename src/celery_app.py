@@ -24,6 +24,6 @@ def send_email_task(recipients:List[str], subject:str, body:str):
     async_to_sync(fastmail.send_message)(message=msg)
     print(f"Email sent to {recipients} with subject {subject}")
 
-# celery -A src.celery:celery_app worker --pool=solo --loglevel=info
+# celery -A src.celery_app:celery_app worker --pool=solo --loglevel=info
 
-# celery -A src.celery:celery_app flower --port=5555
+# celery -A src.celery_app:celery_app flower --port=5555

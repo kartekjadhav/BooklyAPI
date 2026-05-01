@@ -43,6 +43,7 @@ dependencies = [
     "pydantic-settings==2.13.1",
     "pygments==2.19.2",
     "pyjwt>=2.12.1",
+    "pytest>=9.0.3",
     "python-dotenv==1.2.2",
     "python-multipart==0.0.22",
     "pyyaml==6.0.3",
@@ -50,6 +51,7 @@ dependencies = [
     "rich==14.3.3",
     "rich-toolkit==0.19.7",
     "rignore==0.7.6",
+    "schemathesis>=4.17.0",
     "sentry-sdk==2.56.0",
     "shellingham==1.5.4",
     "sqlalchemy==2.0.48",
@@ -62,4 +64,12 @@ dependencies = [
     "uvicorn==0.42.0",
     "watchfiles==1.1.1",
     "websockets==16.0",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+filterwarnings = [
+    "ignore::DeprecationWarning",
+    "ignore::PendingDeprecationWarning"
 ]

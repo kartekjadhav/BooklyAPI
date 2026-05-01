@@ -19,7 +19,7 @@ from src.email_templates import generate_email_verification_template, generate_r
 from src.utils.token_util import generate_serializer_token, verify_serializer_token, email_verify_serializer, password_reset_serializer
 from src.schemas.setting import setting
 from src.utils.passwdUtil import generate_password_hash
-from src.celery import send_email_task
+from src.celery_app import send_email_task
 
 
 auth_router = APIRouter()
